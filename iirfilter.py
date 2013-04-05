@@ -7,8 +7,8 @@ from scipy.io.wavfile import write
 from numpy import zeros, mat, matrix, sqrt, sin, arange, pi, exp, cos, array, dot, max, abs, int16, eye
 
 # Anzahl Filter
-filters = 30;
-m = arange(1., filters+1.);
+filters = 30.;
+m = arange(0., filters);
 
 # Saiten-Koeffizienten
 l = 0.65;
@@ -47,12 +47,12 @@ omegas = zeros((1, filters));
 
 for i in m:
 	# Pol aufstellen
-	gamma = i*(pi/l);
+	gamma = (i+1)*(pi/l);
 	sigma = (1/(2*rho*A)) * (d3*gamma**2 - d1);
 	omega = sqrt( ( (E*I)/(rho*A) - (d3**2)/((2*rho*A)**2) )* gamma**4 + (Ts/(rho*A)+(d1*d3)/2*(rho*A)**2) * gamma**2 + (d1/(2*rho*A))**2);
 
 	# Ausgangsgewichtung
-	a = sin(i*pi*xa/l);
+	a = sin((i+1)*pi*xa/l);
 
 	# Übertrangungsfunktions-Koeffizienten
 	b = T*sin(omega*1/T)/(omega*1/T);
@@ -62,26 +62,26 @@ for i in m:
 	# Zustandsraum-Matrizen
 	fA = array([[0, -c0], [1, -c1]]);
 	fC = array([[0, a]]);
-	state = array([[1, 0]]);
+	state = array([[1, 0]]).T;
 
 	# 1-Zeilen Ausgangsmatrix
-	block_C[0,(i-1)*2:(i-1)*2+2] = fC
-	omegas[0,i-1] = omega
-	sigmas[0,i-1] = sigma
-	block_A[(i-1)*2:(i-1)*2+2,(i-1)*2:(i-1)*2+2] = fA
-	block_state[(i-1)*2:(i-1)*2+2,0] = state;
+	block_C[:, i*2:i*2+2] = fC
+	omegas[:, i-1] = omega
+	sigmas[:, i-1] = sigma
+	block_A[i*2:i*2+2, i*2:i*2+2] = fA
+	block_state[i*2:i*2+2, :] = state;
 
 block_Apow = eye(block_A.shape[1])
 
 j = 0;
 while j < blocksize:
 	block_Apow = dot(block_Apow,block_A);
-	block_CA[j] = dot(block_C,block_Apow);
+	block_CA[j, :] = dot(block_C,block_Apow);
 	j = j + 1;
 
 j = 0;
 while j < samples:
-	y[0:1, j:j+blocksize] = dot(block_CA, block_state).T;
+	y[:, j:j+blocksize] = dot(block_CA, block_state).T;
 	block_state = dot(block_Apow, block_state);
 	j = j + blocksize;
 
