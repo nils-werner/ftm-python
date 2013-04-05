@@ -82,7 +82,7 @@ while j < blocksize:
 j = 0;
 while j < samples:
 	y[0:1, j:j+blocksize] = dot(block_CA, block_state).T;
-	block_state = dot(block_A, block_state);
+	block_state = dot(block_Apow, block_state);
 	j = j + blocksize;
 
 y = np.int16(y.T/np.max(np.abs(y)) * 32767)
