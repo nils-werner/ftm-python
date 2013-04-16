@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+import pyaudio
 import matplotlib.pyplot as plt
 from scipy.io.wavfile import write
 
@@ -25,15 +26,9 @@ xa = 0.1;
 
 # Abtastrate und Samplelänge
 T = 44100;
-seconds = 10;
-samples = seconds*T;
-y = zeros((1,samples))
 
 # Blockverarbeitungs-Länge
 blocksize = 100;
-
-# Ausgangssignal
-y = zeros((1,samples));
 
 # Ausgangs- und Übergangsmatrix, Zustandsvektor
 block_C = zeros((1, filters*2));
@@ -79,11 +74,16 @@ while j < blocksize:
 	block_CA[j, :] = dot(block_C,block_Apow);
 	j = j + 1;
 
-j = 0;
-while j < samples:
-	y[:, j:j+blocksize] = dot(block_CA, block_state).T;
-	block_state = dot(block_Apow, block_state);
-	j = j + blocksize;
+p = pyaudio.PyAudio()
+stream = p.open(format=pyaudio.paFloat32,
+				channels=1,
+				rate=T,
+				output=True)
 
-y = np.int16(y.T/np.max(np.abs(y)) * 32767)
-write('out.wav', 44100, y)
+j = 0;
+while 1:
+	stream.write((0.01 * dot(block_CA, block_state)).T.astype(np.float32).tostring());
+	block_state = dot(block_Apow, block_state);
+
+stream.close()
+p.terminate()
